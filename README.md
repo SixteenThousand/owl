@@ -7,8 +7,8 @@ Say you want to backup some of your files on to a memory stick. Most likely
 that memory stick uses `FAT32` or `exFAT` as its file system, as this is the 
 most compatible with the most operating systems. But if any of your files 
 have special characters like `:` or `?` in their names, this won't work (see 
-<https://learn.microsoft.com/en-gb/windows/win32/fileio/exfat-specification> 
-for more details).
+<https://learn.microsoft.com/en-gb/windows/win32/fileio/exfat-specification>, 
+section 7.7.3 for more details).
 
 Alternatively, say you have a file that needs to be on an older computer 
 that will not render some characters (like multi-character emoji) 

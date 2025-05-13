@@ -37,19 +37,14 @@ import (
  */
 type runeset = [][2]rune
 
-/**
- * A runemap represents a list of rune swaps that should be preformed before
- * dealing with any invalid runes. The first number in each entry is the
- * Code Point of the rune to be replaced, the second the Code Point of its
- * replacement.
- */
-type runemap = [][2]rune
-
 // Unrelated to the standard library's "context".
 type context = struct {
-	command string
-	hasDryRun bool
-	fileSpecs []string
+	FileSpecs []string
+	Directories []string
+	DryRun bool
+	Strategy string
+	DoHelp bool
+	DoVersion bool
 }
 
 
@@ -74,11 +69,6 @@ var FAT_RUNESET = runeset{
 	{ 0x7d, MAX_CODE_POINT},
 }
 
-var DEFAULT_RUNEMAP = runemap{
-	{ 0x20, 0x5f }, // space -> underscore (a.k.a low line)
-}
-
-
 /// MAIN FUNCTIONS
 func isFatValid(r rune) bool {
 	for _, runeRange := range FAT_RUNESET {
@@ -89,11 +79,8 @@ func isFatValid(r rune) bool {
 	return false
 }
 
-func restrictRuneset(s, strategy string, userSubs runemap) string {
+func restrictRuneset(s, strategy string) string {
 	result := s
-	for _, sub := range userSubs {
-		result = strings.ReplaceAll(result, string(sub[0]), string(sub[1]))
-	}
 	toValidSubs := make(map[rune]string)
 	if strategy == "remove" {
 		for _, r := range result {
@@ -126,20 +113,35 @@ func kaput(err error) {
 	}
 }
 
+// TODO: Collect all invalid args into one error instead of failing fast.
 func parseCLIArgs(args []string) (context, error) {
-	var result context
+	// Set defaults
+	result := context{
+		FileSpecs: []string{},
+		Directories: []string{},
+		DryRun: false,
+		Strategy: "fat",
+		DoHelp: false,
+		DoVersion: false,
+	}
 	index := 1
 	isFlag := func(arg string) bool {
 		return arg[0] == '-'
 	}
-	if !isFlag(args[index]) {
-		result.command = args[index]
-		index++
-	}
 	for index < len(args) {
 		switch arg := args[index]; arg {
+		case "-d", "--directory":
+			result.Directories = append(result.Directories, arg)
+			index++
 		case "-n", "--dry-run":
-			result.hasDryRun = true
+			result.DryRun = true
+		case "-s", "--strategy":
+			result.Strategy = args[index]
+			index++
+		case "-h", "--help":
+			result.DoHelp = true
+		case "-v", "--version":
+			result.DoVersion = true
 		default:
 			if isFlag(arg) {
 				return result, errors.New(fmt.Sprintf(
@@ -147,7 +149,7 @@ func parseCLIArgs(args []string) (context, error) {
 					arg,
 				))
 			} else {
-				result.fileSpecs = append(result.fileSpecs, arg)
+				result.FileSpecs = append(result.FileSpecs, arg)
 			}
 		}
 		index++
@@ -155,48 +157,55 @@ func parseCLIArgs(args []string) (context, error) {
 	return result, nil
 }
 
-func cleanCommand(ctx context) {
-	for _, file := range ctx.fileSpecs {
-		if _, err := os.Stat(file); err != nil {
-			warn("File <<%s>> does not exist!", file)
-			continue
-		}
-		oldName := fpath.Base(file)
-		dirName := fpath.Dir(file)
-		if ctx.hasDryRun {
-			fmt.Printf(
-				"%s -> <<%s>>\n",
-				file,
-				restrictRuneset(oldName, "represent", DEFAULT_RUNEMAP),
-			)
-		} else {
-			os.Rename(file,fpath.Join(
-				dirName,
-				restrictRuneset(oldName, "represent", DEFAULT_RUNEMAP),
-			))
-		}
-	}
+// TODO: Finish writing options short help. Mention man page where relevant.
+func printHelp() {
+	fmt.Println(`Owl - a hunter of bad characters in filenames
+
+ Usage:
+   owl [options] FILES
+
+ Rename FILES such that all characters that invalid in FAT file systems 
+ (?,\,*,etc.) are removed.
+ 
+ Options:
+   -s,--strategy
+   -h,--help
+   -v,--version
+   -d,--directory DIRECTORY
+`);
 }
 
-func helpCommand() {
-	fmt.Println(`TBD`)
-}
-
-func versionCommand() {
-	fmt.Printf("Owl file renaming tool, version %s\n", OwlVersion)
-}
 
 func main() {
 	ctx, err := parseCLIArgs(os.Args)
 	kaput(err)
-	switch ctx.command {
-	case "clean":
-		cleanCommand(ctx)
-	case "help":
-		helpCommand()
-	case "version":
-		versionCommand()
-	default:
-		helpCommand()
+	if ctx.DoHelp {
+		printHelp()
+	} else if ctx.DoVersion {
+		fmt.Printf(
+			"Owl - a hunter of bad characters in file names\nversion %s\n",
+			OwlVersion,
+		)
+	} else {
+		for _, file := range ctx.FileSpecs {
+			if _, err := os.Stat(file); err != nil {
+				warn("File <<%s>> does not exist!", file)
+				continue
+			}
+			oldName := fpath.Base(file)
+			dirName := fpath.Dir(file)
+			if ctx.DryRun {
+				fmt.Printf(
+					"%s -> <<%s>>\n",
+					file,
+					restrictRuneset(oldName, "represent"),
+				)
+			} else {
+				os.Rename(file,fpath.Join(
+					dirName,
+					restrictRuneset(oldName, "represent"),
+				))
+			}
+		}
 	}
 }
