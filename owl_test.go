@@ -25,21 +25,20 @@ import (
 
 func TestRestrictRuneset(t *testing.T) {
 	removeTCases := map[string]string{
-		"Deutschland-\U0001f1e9\U0001f1ea": "Deutschland-",
-		"\U0001f1e9\U0001f1ea": "_empty_",
-		"The Salmon \U0001f41f Of Doubt": "The Salmon  Of Doubt",
-		"Why put questions in file names?": "Why_put_questions_in_file_names",
-		"This* causes ~problems~": "This_causes_~problems~",
+		"::?\\": "_EMPTY_",
+		"The Salmon \U0001f41f Of Doubt": "The Salmon \U0001f41f Of Doubt",
+		"Why put questions in file names?": "Why put questions in file names",
+		"This* causes ~problems~": "This causes ~problems~",
+		"There are* *alot ** of c*veats * here": "There are alot of cveats here",
 	}
 	representTCases := map[string]string{
-		"Deutschland-\U0001f1e9\U0001f1ea": "Deutschland-_U1f1e9__U1f1ea_",
-		"\U0001f1e9\U0001f1ea": "_empty_",
-		"The Salmon \U0001f41f Of Doubt": "The Salmon _U1f41f_ Of Doubt",
-		"Why put questions in file names?": "Why put questions in file names_U3f_",
-		"This*-causes-~problems~": "This_U2a_-causes-~problems~",
+		"::?\\": "_U3A__U3A__U3F__U5C_",
+		"Why put questions in file names?": "Why put questions in file names_U3F_",
+		"The Salmon \U0001f41f Of Doubt": "The Salmon \U0001f41f Of Doubt",
+		"This*-causes-~problems~": "This_U2A_-causes-~problems~",
 	}
 	for input, want := range removeTCases {
-		if have:=restrictRuneset(input, "represent", DEFAULT_RUNEMAP); have != want {
+		if have:=restrictRuneset(input, "remove"); have != want {
 			t.Errorf(
 				"With strategy \"remove\":\n\twant <<%s>>\n\thave <<%s>>\n",
 				want,
@@ -48,7 +47,7 @@ func TestRestrictRuneset(t *testing.T) {
 		}
 	}
 	for input, want := range representTCases {
-		if have:=restrictRuneset(input, "represent", DEFAULT_RUNEMAP); have != want {
+		if have:=restrictRuneset(input, "represent"); have != want {
 			t.Errorf(
 				"With strategy \"represent\":\n\twant <<%s>>\n\thave <<%s>>\n",
 				want,
