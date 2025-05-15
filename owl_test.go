@@ -29,7 +29,7 @@ func TestRestrictRuneset(t *testing.T) {
 		"The Salmon \U0001f41f Of Doubt": "The Salmon \U0001f41f Of Doubt",
 		"Why put questions in file names?": "Why put questions in file names",
 		"This* causes ~problems~": "This causes ~problems~",
-		"There are* *alot ** of c*veats * here": "There are alot of cveats here",
+		"There are* *alot ** of c*veats * here": "There are alot  of cveats  here",
 	}
 	representTCases := map[string]string{
 		"::?\\": "_U3A__U3A__U3F__U5C_",

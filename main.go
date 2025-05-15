@@ -91,12 +91,15 @@ func restrictRuneset(s, strategy string) string {
 	} else {
 		for _, r := range result {
 			if !isFatValid(r) {
-				toValidSubs[r] = fmt.Sprintf("_U%d_", r)
+				toValidSubs[r] = fmt.Sprintf("_U%X_", r)
 			}
 		}
 	}
 	for old, new := range toValidSubs {
 		result = strings.ReplaceAll(result, string(old), new)
+	}
+	if len(result) == 0 {
+		return "_EMPTY_"
 	}
 	return result
 }
@@ -159,7 +162,7 @@ func parseCLIArgs(args []string) (context, error) {
 
 // TODO: Finish writing options short help. Mention man page where relevant.
 func printHelp() {
-	fmt.Println(`Owl - a hunter of bad characters in filenames
+	fmt.Print(`Owl - a hunter of bad characters in filenames
 
  Usage:
    owl [options] FILES
@@ -172,6 +175,7 @@ func printHelp() {
    -h,--help
    -v,--version
    -d,--directory DIRECTORY
+
 `);
 }
 

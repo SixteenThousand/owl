@@ -5,4 +5,6 @@ owl: ${SOURCES}
 owl.1: man.md
 	pandoc -s --shift-heading-level-by=-1 --to=man man.md > owl.1
 build: owl owl.1
-.PHONY: build
+test: *.go
+	go test -v .
+.PHONY: build test
