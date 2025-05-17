@@ -21,7 +21,20 @@ package main
 
 import (
 	"testing"
+	"strings"
 )
+
+func sliceToString(slice []string) string {
+	var b strings.Builder
+	b.WriteString("[\n")
+	for _, s := range slice {
+		b.WriteString("  ")
+		b.WriteString(s)
+		b.WriteRune('\n')
+	}
+	b.WriteRune(']')
+	return b.String()
+}
 
 func TestRestrictRuneset(t *testing.T) {
 	removeTCases := map[string]string{
@@ -38,7 +51,8 @@ func TestRestrictRuneset(t *testing.T) {
 		"This*-causes-~problems~": "This_U2A_-causes-~problems~",
 	}
 	for input, want := range removeTCases {
-		if have:=restrictRuneset(input, "remove"); have != want {
+		have := restrictRuneset(input, "remove")
+		if ; have != want {
 			t.Errorf(
 				"With strategy \"remove\":\n\twant <<%s>>\n\thave <<%s>>\n",
 				want,
@@ -52,6 +66,38 @@ func TestRestrictRuneset(t *testing.T) {
 				"With strategy \"represent\":\n\twant <<%s>>\n\thave <<%s>>\n",
 				want,
 				have,
+			)
+		}
+	}
+}
+
+func TestSortPaths(t *testing.T) {
+	paths := []string{
+		"./testdata/Tawnee: The Game",
+		"./testdata/birds:/pengiuns?",
+		"./testdata/birds:/pengiuns?/emperor",
+		"./testdata/birds:/pengiuns?/pingu?",
+		"./testdata/birds:",
+	}
+	want := []string{
+		"./testdata/birds:/pengiuns?/emperor",
+		"./testdata/birds:/pengiuns?/pingu?",
+		"./testdata/birds:/pengiuns?",
+		"./testdata/birds:",
+		"./testdata/Tawnee: The Game",
+	}
+	have := sortPaths(paths)
+	if len(have) > len(want) {
+		t.Fatal("Sorted list is bigger than original")
+	} else if len(have) < len(want) {
+		t.Fatal("Sorted list is smaller than original")
+	}
+	for index, path := range have {
+		if index >= len(want) || path != want[index] {
+			t.Fatalf(
+				"Want: %s\nHave: %s\n",
+				sliceToString(want),
+				sliceToString(have),
 			)
 		}
 	}
