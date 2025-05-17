@@ -71,7 +71,7 @@ func TestRestrictRuneset(t *testing.T) {
 	}
 }
 
-func TestSortPaths(t *testing.T) {
+func TestSortedPaths(t *testing.T) {
 	paths := []string{
 		"./testdata/Tawnee: The Game",
 		"./testdata/birds:/pengiuns?",
@@ -83,10 +83,10 @@ func TestSortPaths(t *testing.T) {
 		"./testdata/birds:/pengiuns?/emperor",
 		"./testdata/birds:/pengiuns?/pingu?",
 		"./testdata/birds:/pengiuns?",
-		"./testdata/birds:",
 		"./testdata/Tawnee: The Game",
+		"./testdata/birds:",
 	}
-	have := sortPaths(paths)
+	have := sortedPaths(paths)
 	if len(have) > len(want) {
 		t.Fatal("Sorted list is bigger than original")
 	} else if len(have) < len(want) {

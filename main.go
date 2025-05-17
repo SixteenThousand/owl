@@ -23,6 +23,7 @@ import (
     "fmt"
     "os"
 	fpath "path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -70,6 +71,26 @@ var FAT_RUNESET = runeset{
 }
 
 /// MAIN FUNCTIONS
+/**
+ * Sort a list of paths so that all files are listed before the directories
+ * that contain them. Files in the same directory are listed in alphanumeric
+ * order.
+ */
+func sortedPaths(paths []string) []string {
+	sorter := func(a, b string) int {
+		sep := string(fpath.Separator)
+		aNumComponents := len(strings.Split(a, sep))
+		bNumComponents := len(strings.Split(b, sep))
+		if aNumComponents == bNumComponents {
+			return strings.Compare(fpath.Base(a), fpath.Base(b))
+		}
+		return bNumComponents - aNumComponents
+	}
+	result := slices.Clone(paths)
+	slices.SortFunc(result, sorter)
+	return result
+}
+
 func isFatValid(r rune) bool {
 	for _, runeRange := range FAT_RUNESET {
 		if runeRange[0] <= r && r <= runeRange[1] {
