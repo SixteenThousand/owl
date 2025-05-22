@@ -16,7 +16,7 @@ flag below.
 
 
 ## Options:
-### -s, --strategy STRATEGY
+### -s, \-\-strategy STRATEGY
 Change what happens to invalid characters. Choices are:
 
 - "remove": just remove the characters. If left with an empty string, rename 
@@ -24,12 +24,12 @@ Change what happens to invalid characters. Choices are:
 - "represent": replace each character with "\_Unum_", where "num" is the 
   Unicode Code Point of the character.
 
-### -n, --dry-run
+### -n, \-\-dry-run
 Causes Owl to just print a representation of what would be done without 
 actually renaming any files.
 
-### -v, --version
+### -v, \-\-version
 Show version information.
 
-### -h, --help
+### -h, \-\-help
 Show a small help message.
