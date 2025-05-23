@@ -40,8 +40,8 @@ type runeset = [][2]rune
 
 // Unrelated to the standard library's "context".
 type context = struct {
-	FileSpecs []string
-	Directories []string
+	FileList []string
+	RecurseDirs []string
 	DryRun bool
 	Strategy string
 	DoHelp bool
@@ -141,10 +141,10 @@ func kaput(err error) {
 func parseCLIArgs(args []string) (context, error) {
 	// Set defaults
 	result := context{
-		FileSpecs: []string{},
-		Directories: []string{},
+		FileList: []string{},
+		RecurseDirs: []string{},
 		DryRun: false,
-		Strategy: "fat",
+		Strategy: "represent",
 		DoHelp: false,
 		DoVersion: false,
 	}
@@ -155,7 +155,7 @@ func parseCLIArgs(args []string) (context, error) {
 	for index < len(args) {
 		switch arg := args[index]; arg {
 		case "-d", "--directory":
-			result.Directories = append(result.Directories, arg)
+			result.RecurseDirs = append(result.RecurseDirs, arg)
 			index++
 		case "-n", "--dry-run":
 			result.DryRun = true
@@ -173,7 +173,7 @@ func parseCLIArgs(args []string) (context, error) {
 					arg,
 				))
 			} else {
-				result.FileSpecs = append(result.FileSpecs, arg)
+				result.FileList = append(result.FileList, arg)
 			}
 		}
 		index++
@@ -188,7 +188,7 @@ func printHelp() {
  Usage:
    owl [options] FILES
 
- Rename FILES such that all characters that invalid in FAT file systems 
+ Rename FILES such that all characters that are invalid in FAT file systems 
  (?,\,*,etc.) are removed.
  
  Options:
@@ -212,24 +212,22 @@ func main() {
 			OwlVersion,
 		)
 	} else {
-		for _, file := range ctx.FileSpecs {
+		for _, file := range ctx.FileList {
 			if _, err := os.Stat(file); err != nil {
 				warn("File <<%s>> does not exist!", file)
 				continue
 			}
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
+			newPath := fpath.Join(dirName, restrictRuneset(oldName, ctx.Strategy))
 			if ctx.DryRun {
 				fmt.Printf(
 					"%s -> <<%s>>\n",
 					file,
-					restrictRuneset(oldName, "represent"),
+					newPath,
 				)
 			} else {
-				os.Rename(file,fpath.Join(
-					dirName,
-					restrictRuneset(oldName, "represent"),
-				))
+				os.Rename(file, newPath)
 			}
 		}
 	}
