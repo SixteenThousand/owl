@@ -21,6 +21,7 @@ package main
 import (
 	"errors"
     "fmt"
+	"io/fs"
     "os"
 	fpath "path/filepath"
 	"slices"
@@ -36,10 +37,10 @@ import (
  * (in that order) of a range of Code Points which are valid. Ranges are
  * inclusive.
  */
-type runeset = [][2]rune
+type runeset [][2]rune
 
 // Unrelated to the standard library's "context".
-type context = struct {
+type context struct {
 	FileList []string
 	RecurseDirs []string
 	DryRun bool
@@ -72,24 +73,55 @@ var FAT_RUNESET = runeset{
 
 /// MAIN FUNCTIONS
 /**
- * Sort a list of paths so that all files are listed before the directories
- * that contain them. Files in the same directory are listed in alphanumeric
+ * Compares paths so that all files come before the directories that contain 
+ * them. Files in the same directory come in alphanumeric
  * order.
  */
-func sortedPaths(paths []string) []string {
-	sorter := func(a, b string) int {
-		sep := string(fpath.Separator)
-		aNumComponents := len(strings.Split(a, sep))
-		bNumComponents := len(strings.Split(b, sep))
-		if aNumComponents == bNumComponents {
-			return strings.Compare(fpath.Base(a), fpath.Base(b))
-		}
-		return bNumComponents - aNumComponents
+func comparePaths(a, b string) int {
+	sep := string(fpath.Separator)
+	aNumComponents := len(strings.Split(a, sep))
+	bNumComponents := len(strings.Split(b, sep))
+	if aNumComponents == bNumComponents {
+	    return strings.Compare(fpath.Base(a), fpath.Base(b))
 	}
-	result := slices.Clone(paths)
-	slices.SortFunc(result, sorter)
-	return result
+	return bNumComponents - aNumComponents
 }
+
+func (ctx *context) parseFileList() ([]string, error) {
+	errMsgs := []string{}
+	result := slices.Clone(ctx.FileList)
+	slices.SortFunc(result, comparePaths)
+	for _, path := range result {
+		if _, err := os.Stat(path); err != nil {
+			msg := fmt.Sprintf( "File <<%s>> does not exist", path)
+			errMsgs = append(errMsgs, msg)
+		}
+	}
+	addFiles := func(fullPath string, fileInfo fs.DirEntry, err error) error {
+		if err != nil {
+			msg := fmt.Sprintf(
+				"Directory <<%s>> does not exist or is not searchable", 
+				fullPath,
+			)
+			errMsgs = append(errMsgs,msg)
+			return err
+		}
+		loc, isDup := slices.BinarySearchFunc(result, fullPath, comparePaths)
+		if !isDup {
+			result = slices.Insert(result, loc, fullPath)
+		}
+		return nil
+	}
+	for _, dir := range ctx.RecurseDirs {
+		fpath.WalkDir(dir, addFiles)
+	}
+	if len(errMsgs) == 0 {
+		return result, nil
+	} else {
+		return result, errors.New(strings.Join(errMsgs, "\n"))
+	}
+}
+
 
 func isFatValid(r rune) bool {
 	for _, runeRange := range FAT_RUNESET {
@@ -125,8 +157,7 @@ func restrictRuneset(s, strategy string) string {
 	return result
 }
 
-func warn(msgFmt, detail string) {
-	msg := fmt.Sprintf(msgFmt, detail)
+func warn(msg string) {
 	fmt.Fprintf(os.Stderr, "\x1b[33m%s\x1b[0m\n", msg)
 }
 
@@ -155,13 +186,13 @@ func parseCLIArgs(args []string) (context, error) {
 	for index < len(args) {
 		switch arg := args[index]; arg {
 		case "-d", "--directory":
-			result.RecurseDirs = append(result.RecurseDirs, arg)
 			index++
+			result.RecurseDirs = append(result.RecurseDirs, args[index])
 		case "-n", "--dry-run":
 			result.DryRun = true
 		case "-s", "--strategy":
-			result.Strategy = args[index]
 			index++
+			result.Strategy = args[index]
 		case "-h", "--help":
 			result.DoHelp = true
 		case "-v", "--version":
@@ -212,14 +243,17 @@ func main() {
 			OwlVersion,
 		)
 	} else {
+		ctx.FileList, err = ctx.parseFileList()
+		if err != nil {
+			warn(err.Error())
+		}
 		for _, file := range ctx.FileList {
-			if _, err := os.Stat(file); err != nil {
-				warn("File <<%s>> does not exist!", file)
-				continue
-			}
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
 			newPath := fpath.Join(dirName, restrictRuneset(oldName, ctx.Strategy))
+			if newPath == file {
+				continue
+			}
 			if ctx.DryRun {
 				fmt.Printf(
 					"%s -> <<%s>>\n",
