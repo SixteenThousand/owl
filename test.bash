@@ -37,6 +37,9 @@ owltest_setup() {
         "Mouse? ${mouse_emoji}" \
         "Deustchland, Deutschland! ${germany_emoji}" \
         "${chinese_simplfied_owl}" \
+        $'Invalid\x80UTF-8' \
+        $'fich\u00E9-en-fran\u00E7ais' \
+        $'No\u0338rse\u0301' \
         'Question? Why' \
         'QUESTION: WHY'
 }
@@ -52,11 +55,16 @@ owltest_reset() {
 }
 
 owl() {
-    $OWL_START/owl $@
+    $OWL_START/owl "$@"
 }
 
-unicode_rune() {
-    printf "\U$(printf '%08s' $1)\n"
+unicode_range() {
+    local low=$(printf %d $1)
+    local high=$(printf %d $2)
+    for i in $(seq $1 $2); do
+        printf "0d%d_0x%x -> \U$(printf '%08x' $i)\n" $i $i
+    done |
+        column
 }
 
 # Help message
@@ -71,6 +79,7 @@ You will now be in ${OWL_TESTDATA}; cd out and delete this directory to
 clean up after a test. Or run owltest_reset to do the same in-place.
 EOF
 
-export -f owltest_setup owltest_reset owltest_teardown owl unicode_rune
+export -f owltest_setup owltest_reset owltest_teardown owl unicode_range
 owltest_setup
 bash -i
+echo '+++ Test data directory cleared +++'
