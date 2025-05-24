@@ -55,6 +55,9 @@ type context struct {
 // See link below for more details.
 // https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-2/#G25564
 const MAX_CODE_POINT rune = 0x10ffff
+var (
+	ErrNoPwd = errors.New("Could not get current working directory!")
+)
 
 var OwlVersion string
 
@@ -76,6 +79,7 @@ var FAT_RUNESET = runeset{
  * Compares paths so that all files come before the directories that contain 
  * them. Files in the same directory come in alphanumeric
  * order.
+ * Note that paths a,b MUST be absolute.
  */
 func comparePaths(a, b string) int {
 	sep := string(fpath.Separator)
@@ -113,6 +117,10 @@ func (ctx *context) parseFileList() ([]string, error) {
 		return nil
 	}
 	for _, dir := range ctx.RecurseDirs {
+		dir, err := fpath.Abs(dir)
+		if err != nil {
+			return result, ErrNoPwd
+		}
 		fpath.WalkDir(dir, addFiles)
 	}
 	if len(errMsgs) == 0 {
@@ -121,7 +129,6 @@ func (ctx *context) parseFileList() ([]string, error) {
 		return result, errors.New(strings.Join(errMsgs, "\n"))
 	}
 }
-
 
 func isFatValid(r rune) bool {
 	for _, runeRange := range FAT_RUNESET {
@@ -244,9 +251,13 @@ func main() {
 		)
 	} else {
 		ctx.FileList, err = ctx.parseFileList()
+		if err == ErrNoPwd {
+			kaput(err)
+		}
 		if err != nil {
 			warn(err.Error())
 		}
+		counter := 0
 		for _, file := range ctx.FileList {
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
@@ -258,8 +269,13 @@ func main() {
 				continue
 			}
 			if ctx.DryRun {
+				format := "%s -> <<%s>>\n"
+				if counter % 2 == 1 {
+					format = "\x1b[2m%s -> <<%s>>\x1b[0m\n"
+				}
+				counter++
 				fmt.Printf(
-					"%s -> <<%s>>\n",
+					format,
 					file,
 					newPath,
 				)
