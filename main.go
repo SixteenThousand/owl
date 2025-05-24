@@ -132,10 +132,10 @@ func isFatValid(r rune) bool {
 	return false
 }
 
-func restrictRuneset(s, strategy string) string {
+func (ctx *context) restrictRuneset(s string) string {
 	result := s
 	toValidSubs := make(map[rune]string)
-	if strategy == "remove" {
+	if ctx.Strategy == "remove" {
 		for _, r := range result {
 			if !isFatValid(r) {
 				toValidSubs[r] = ""
@@ -250,7 +250,10 @@ func main() {
 		for _, file := range ctx.FileList {
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
-			newPath := fpath.Join(dirName, restrictRuneset(oldName, ctx.Strategy))
+			newName := ctx.restrictRuneset(
+				strings.ToValidUTF8(oldName, "_INVALID_"),
+			)
+			newPath := fpath.Join(dirName, newName)
 			if newPath == file {
 				continue
 			}
