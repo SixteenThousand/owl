@@ -24,6 +24,10 @@ Change what happens to invalid characters. Choices are:
 - "represent": replace each character with "\_Unum_", where "num" is the 
   Unicode Code Point of the character.
 
+### -r, \-\-recurse DIRECTORY
+Recursively search DIRECTORY for files/directories to rename. Search 
+includes DIRECTORY itself.
+
 ### -n, \-\-dry-run
 Causes Owl to just print a representation of what would be done without 
 actually renaming any files.

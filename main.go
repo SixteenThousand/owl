@@ -192,7 +192,7 @@ func parseCLIArgs(args []string) (context, error) {
 	}
 	for index < len(args) {
 		switch arg := args[index]; arg {
-		case "-d", "--directory":
+		case "-r", "--recurse":
 			index++
 			result.RecurseDirs = append(result.RecurseDirs, args[index])
 		case "-n", "--dry-run":
@@ -233,7 +233,7 @@ func printHelp() {
    -s,--strategy
    -h,--help
    -v,--version
-   -d,--directory DIRECTORY
+   -r,--recurse DIRECTORY
 
 `);
 }
