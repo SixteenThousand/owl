@@ -93,27 +93,24 @@ func comparePaths(a, b string) int {
 
 func (ctx *context) parseFileList() ([]string, error) {
 	errMsgs := []string{}
-	result := slices.Clone(ctx.FileList)
-	slices.SortFunc(result, comparePaths)
-	for _, path := range result {
-		if _, err := os.Stat(path); err != nil {
-			msg := fmt.Sprintf( "File <<%s>> does not exist", path)
-			errMsgs = append(errMsgs, msg)
+	result := []string{}
+	addPath := func(path string) {
+		loc, isDup := slices.BinarySearchFunc(result, path, comparePaths)
+		if !isDup {
+			result = slices.Insert(result, loc, path)
 		}
 	}
-	addFiles := func(fullPath string, fileInfo fs.DirEntry, err error) error {
+	addRecursively := func(path string, fileInfo fs.DirEntry, err error) error {
 		if err != nil {
+			// This can only happen with the path passed to WalkDir
 			msg := fmt.Sprintf(
 				"Directory <<%s>> does not exist or is not searchable", 
-				fullPath,
+				path,
 			)
 			errMsgs = append(errMsgs,msg)
 			return err
 		}
-		loc, isDup := slices.BinarySearchFunc(result, fullPath, comparePaths)
-		if !isDup {
-			result = slices.Insert(result, loc, fullPath)
-		}
+		addPath(path)
 		return nil
 	}
 	for _, dir := range ctx.RecurseDirs {
@@ -121,7 +118,18 @@ func (ctx *context) parseFileList() ([]string, error) {
 		if err != nil {
 			return result, ErrNoPwd
 		}
-		fpath.WalkDir(dir, addFiles)
+		fpath.WalkDir(dir, addRecursively)
+	}
+	for _, path := range ctx.FileList {
+		if _, err := os.Stat(path); err != nil {
+			msg := fmt.Sprintf( "File <<%s>> does not exist", path)
+			errMsgs = append(errMsgs, msg)
+		}
+		path, err := fpath.Abs(path)
+		if err != nil {
+			return result, ErrNoPwd
+		}
+		addPath(path)
 	}
 	if len(errMsgs) == 0 {
 		return result, nil
