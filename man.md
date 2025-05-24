@@ -33,3 +33,29 @@ Show version information.
 
 ### -h, \-\-help
 Show a small help message.
+
+
+## Edge Cases & Other Tidbits
+## What doesn't FAT allow?
+Mainly `*<>\|/:?'`
+
+### What about whitespace?
+Some of these (like tab, line feed, and carriage return) are not valid under 
+FAT and will be removed.
+
+If a sequence of invalid characters surrounded by spaces is in one of the 
+file names, and the `remove` strategy is being used, then you will be left 
+with multiple whitespace characters in a row. For example,
+```
+Really questionable ?? filename
+```
+will become
+```
+Really questionable  filename
+```
+with a double space before `filename`.
+
+### What about invalid UTF-8/UTF-16?
+This is removed and replaced with "\_INVALID_". This replacement is done 
+before anything else.
+

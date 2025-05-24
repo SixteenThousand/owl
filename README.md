@@ -20,8 +20,9 @@ characters, at least if you don't want to manually write a very complex
 regular expression every time you encounter this problem.
 
 Owl will hunt down any files with these issues and rename them as 
-appropriate - see `man.md` for usage.
+appropriate - see `man.md` for usage and other important information.
 
+See [Infrequently Asked Questions](./iaq.md) for unimportant information.
 
 ---
 
