@@ -262,6 +262,8 @@ func printHelp() {
    -h,--help
    -v,--version
    -r,--recurse DIRECTORY
+   -n,--dry-run
+   -p,--portable
 
 `);
 }

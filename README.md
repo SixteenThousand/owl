@@ -37,3 +37,5 @@ See [Infrequently Asked Questions](./iaq.md) for unimportant information.
 5. mmv: <https://github.com/rrthomas/mmv>
 6. PathShortener: <https://github.com/ElectricRCAircraftGuy/eRCaGuy_PathShortener>
 7. fuseblk-filename-fixer: <https://github.com/DDR0/fuseblk-filename-fixer>
+8. POSIX Portable Filename Set (see section 3.265): 
+   <https://pubs.opengroup.org/onlinepubs/9799919799/>

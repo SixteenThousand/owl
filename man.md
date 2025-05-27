@@ -32,6 +32,11 @@ includes DIRECTORY itself.
 Causes Owl to just print a representation of what would be done without 
 actually renaming any files.
 
+### -p,\-\-portable
+Restrict characters to ones in the POSIX Portable Filename Character Set 
+(see <https://pubs.opengroup.org/onlinepubs/9799919799/>, section 3.265) 
+instead of FAT compatible ones.
+
 ### -v, \-\-version
 Show version information.
 
