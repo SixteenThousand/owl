@@ -40,6 +40,16 @@ import (
  */
 type runeset [][2]rune
 
+/**
+ * A basic search-and-replace operation. Replaces each instance of "Target" 
+ * with each member of "Subs" in order, with all instances beyond 
+ * length(Subs) being replaced by the last member of Subs.
+ */
+type replacement struct {
+	Target string
+	Subs []string
+}
+
 // Unrelated to the standard library's "context".
 type context struct {
 	FileList []string
@@ -50,6 +60,7 @@ type context struct {
 	DoVersion bool
 	Rset runeset
 	TruncLen int
+	Replacements []replacement
 }
 
 
@@ -207,6 +218,16 @@ func (ctx *context) truncate(name string) string {
 	return name
 }
 
+func (ctx *context) searchAndReplace(name string) string {
+	for _, rep := range ctx.Replacements {
+		for i:=0; i<len(rep.Subs)-1; i++ {
+			name = strings.Replace(name, rep.Target, rep.Subs[i], 1)
+		}
+		name = strings.ReplaceAll(name, rep.Target, rep.Subs[len(rep.Subs)-1])
+	}
+	return name
+}
+
 func warn(msg string) {
 	fmt.Fprintf(os.Stderr, "\x1b[33m%s\x1b[0m\n", msg)
 }
@@ -230,6 +251,7 @@ func parseCLIArgs(args []string) (context, error) {
 		DoVersion: false,
 		Rset: FAT_RUNESET,
 		TruncLen: 0,
+		Replacements: []replacement{},
 	}
 	index := 1
 	isFlag := func(arg string) bool {
@@ -247,6 +269,19 @@ func parseCLIArgs(args []string) (context, error) {
 			result.Strategy = args[index]
 		case "-p", "--portable":
 			result.Rset = POSIX_PORTABLE_RUNESET
+		case "-c", "--replace":
+			index++
+			target, subs, ok := strings.Cut(args[index], ":")
+			if !ok {
+				return result, errors.New(fmt.Sprintf(
+					"Incorrect syntax (<<%s>>) for replacement: please use '{TARGET}:{REPLACEMNT1},{REPLACEMNT2},...'",
+					args[index],
+				))
+			}
+			result.Replacements = append(
+				result.Replacements,
+				replacement{ target, strings.Split(subs, ",") },
+			)
 		case "-t", "--truncate":
 			index++
 			var err error
@@ -321,9 +356,9 @@ func main() {
 			// Calculate the new name
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
-			newName := ctx.truncate(ctx.restrictRuneset(
+			newName := ctx.truncate(ctx.restrictRuneset(ctx.searchAndReplace(
 				strings.ToValidUTF8(oldName, "_INVALID_"),
-			))
+			)))
 			newPath := fpath.Join(dirName, newName)
 			// Check that we want to rename this file
 			if newPath == file {
