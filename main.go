@@ -47,6 +47,7 @@ type context struct {
 	Strategy string
 	DoHelp bool
 	DoVersion bool
+	Rset runeset
 }
 
 
@@ -72,6 +73,15 @@ var FAT_RUNESET = runeset{
 	{ 0x40, 0x5b },
 	{ 0x5d, 0x7b },
 	{ 0x7d, MAX_CODE_POINT},
+}
+
+var POSIX_PORTABLE_RUNESET = runeset{
+	{ 0x2d, 0x2d },
+	{ 0x2e, 0x2e },
+	{ 0x5f, 0x5f },
+	{ 0x30, 0x39 },
+	{ 0x41, 0x5a },
+	{ 0x61, 0x7a },
 }
 
 /// MAIN FUNCTIONS
@@ -145,8 +155,8 @@ func (ctx *context) parseFileList() ([]string, map[string]bool, error) {
 	}
 }
 
-func isFatValid(r rune) bool {
-	for _, runeRange := range FAT_RUNESET {
+func inRuneset(r rune, rset runeset) bool {
+	for _, runeRange := range rset {
 		if runeRange[0] <= r && r <= runeRange[1] {
 			return true
 		}
@@ -159,13 +169,13 @@ func (ctx *context) restrictRuneset(s string) string {
 	toValidSubs := make(map[rune]string)
 	if ctx.Strategy == "remove" {
 		for _, r := range result {
-			if !isFatValid(r) {
+			if !inRuneset(r, ctx.Rset) {
 				toValidSubs[r] = ""
 			}
 		}
 	} else {
 		for _, r := range result {
-			if !isFatValid(r) {
+			if !inRuneset(r, ctx.Rset) {
 				toValidSubs[r] = fmt.Sprintf("_U%X_", r)
 			}
 		}
@@ -200,6 +210,7 @@ func parseCLIArgs(args []string) (context, error) {
 		Strategy: "represent",
 		DoHelp: false,
 		DoVersion: false,
+		Rset: FAT_RUNESET,
 	}
 	index := 1
 	isFlag := func(arg string) bool {
@@ -215,6 +226,8 @@ func parseCLIArgs(args []string) (context, error) {
 		case "-s", "--strategy":
 			index++
 			result.Strategy = args[index]
+		case "-p", "--portable":
+			result.Rset = POSIX_PORTABLE_RUNESET
 		case "-h", "--help":
 			result.DoHelp = true
 		case "-v", "--version":
