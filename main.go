@@ -25,6 +25,7 @@ import (
     "os"
 	fpath "path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -48,6 +49,7 @@ type context struct {
 	DoHelp bool
 	DoVersion bool
 	Rset runeset
+	TruncLen int
 }
 
 
@@ -189,6 +191,22 @@ func (ctx *context) restrictRuneset(s string) string {
 	return result
 }
 
+/**
+ * Truncate to the number of bytes given by the context, but don't break in 
+ * the middle of a rune.
+ */
+func (ctx *context) truncate(name string) string {
+	if ctx.TruncLen < 1 {
+		return name
+	}
+	for byteIndex, _ := range name {
+		if byteIndex > ctx.TruncLen {
+			return name[:byteIndex]
+		}
+	}
+	return name
+}
+
 func warn(msg string) {
 	fmt.Fprintf(os.Stderr, "\x1b[33m%s\x1b[0m\n", msg)
 }
@@ -211,6 +229,7 @@ func parseCLIArgs(args []string) (context, error) {
 		DoHelp: false,
 		DoVersion: false,
 		Rset: FAT_RUNESET,
+		TruncLen: 0,
 	}
 	index := 1
 	isFlag := func(arg string) bool {
@@ -228,6 +247,16 @@ func parseCLIArgs(args []string) (context, error) {
 			result.Strategy = args[index]
 		case "-p", "--portable":
 			result.Rset = POSIX_PORTABLE_RUNESET
+		case "-t", "--truncate":
+			index++
+			var err error
+			result.TruncLen, err = strconv.Atoi(args[index])
+			if err != nil || result.TruncLen < 1 {
+				return result, errors.New(fmt.Sprintf(
+					"Invalid truncation length: <<%s>>",
+					args[index],
+				))
+			}
 		case "-h", "--help":
 			result.DoHelp = true
 		case "-v", "--version":
@@ -292,9 +321,9 @@ func main() {
 			// Calculate the new name
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
-			newName := ctx.restrictRuneset(
+			newName := ctx.truncate(ctx.restrictRuneset(
 				strings.ToValidUTF8(oldName, "_INVALID_"),
-			)
+			))
 			newPath := fpath.Join(dirName, newName)
 			// Check that we want to rename this file
 			if newPath == file {
