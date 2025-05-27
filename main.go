@@ -91,32 +91,39 @@ func comparePaths(a, b string) int {
 	return bNumComponents - aNumComponents
 }
 
-func (ctx *context) parseFileList() ([]string, error) {
+/**
+ * Parses the targeting options into a list of files to rename (stored in a 
+ * map as keys, for storing their new names as values later) and a list of 
+ * all files in the same directory as a target file, with their name in 
+ * lower case, for checking name collisions.
+ */
+// TODO: Write tests for this function
+func (ctx *context) parseFileList() ([]string, map[string]bool, error) {
 	errMsgs := []string{}
-	result := []string{}
-	addPath := func(path string) {
-		loc, isDup := slices.BinarySearchFunc(result, path, comparePaths)
+	nearbyFiles := make(map[string]bool)
+	targets := []string{}
+	addPath := func(pathList *[]string, path string) {
+		loc, isDup := slices.BinarySearchFunc(*pathList, path, comparePaths)
 		if !isDup {
-			result = slices.Insert(result, loc, path)
+			*pathList = slices.Insert(*pathList, loc, path)
 		}
 	}
-	addRecursively := func(path string, fileInfo fs.DirEntry, err error) error {
+	addRecursively := func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			// This can only happen with the path passed to WalkDir
-			msg := fmt.Sprintf(
-				"Directory <<%s>> does not exist or is not searchable", 
-				path,
-			)
-			errMsgs = append(errMsgs,msg)
-			return err
+			errMsgs = append(
+				errMsgs, fmt.Sprintf("Directory <<%s>> not searchable", path))
+			return nil
 		}
-		addPath(path)
+		lowerCasedPath := fpath.Join(fpath.Dir(path), strings.ToLower(entry.Name()))
+		nearbyFiles[lowerCasedPath] = true
+		addPath(&targets, path)
 		return nil
 	}
 	for _, dir := range ctx.RecurseDirs {
 		dir, err := fpath.Abs(dir)
 		if err != nil {
-			return result, ErrNoPwd
+			return targets, nearbyFiles, ErrNoPwd
 		}
 		fpath.WalkDir(dir, addRecursively)
 	}
@@ -127,14 +134,14 @@ func (ctx *context) parseFileList() ([]string, error) {
 		}
 		path, err := fpath.Abs(path)
 		if err != nil {
-			return result, ErrNoPwd
+			return targets, nearbyFiles, ErrNoPwd
 		}
-		addPath(path)
+		addPath(&targets, path)
 	}
 	if len(errMsgs) == 0 {
-		return result, nil
+		return targets, nearbyFiles, nil
 	} else {
-		return result, errors.New(strings.Join(errMsgs, "\n"))
+		return targets, nearbyFiles, errors.New(strings.Join(errMsgs, "\n"))
 	}
 }
 
@@ -258,30 +265,44 @@ func main() {
 			OwlVersion,
 		)
 	} else {
-		ctx.FileList, err = ctx.parseFileList()
+		targets, nearbyFiles, err := ctx.parseFileList()
 		if err == ErrNoPwd {
 			kaput(err)
 		}
 		if err != nil {
 			warn(err.Error())
 		}
-		counter := 0
-		for _, file := range ctx.FileList {
+		numRenamed := 0
+		for _, file := range targets {
+			// Calculate the new name
 			oldName := fpath.Base(file)
 			dirName := fpath.Dir(file)
 			newName := ctx.restrictRuneset(
 				strings.ToValidUTF8(oldName, "_INVALID_"),
 			)
 			newPath := fpath.Join(dirName, newName)
+			// Check that we want to rename this file
 			if newPath == file {
 				continue
 			}
+			lowerCasedPath := fpath.Join(dirName, strings.ToLower(newName))
+			if nearbyFiles[lowerCasedPath] {
+				warn(fmt.Sprintf(
+					"Path <<%s>> would be renamed to\n  <<%s>>,\nwhich collides with\n  <<%s>>\nSkipping...",
+					file,
+					newPath,
+					lowerCasedPath,
+				))
+				continue
+			}
+			nearbyFiles[lowerCasedPath] = true
+			// Do the rename, or just print what would happen
+			numRenamed++
 			if ctx.DryRun {
 				format := "%s -> <<%s>>\n"
-				if counter % 2 == 1 {
+				if numRenamed % 2 == 0 {
 					format = "\x1b[2m%s -> <<%s>>\x1b[0m\n"
 				}
-				counter++
 				fmt.Printf(
 					format,
 					file,
@@ -291,5 +312,6 @@ func main() {
 				os.Rename(file, newPath)
 			}
 		}
+		fmt.Printf("%d files renamed!\n", numRenamed)
 	}
 }
