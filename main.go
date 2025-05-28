@@ -345,26 +345,26 @@ func printHelp() {
  (?,\,*,etc.) are removed.
 
  Options:
+   -r,--recurse DIRECTORY
+     Recursively search for files in DIRECTORY with bad characters
    -s,--strategy remove|represent
      What to do with bad characters; either replace with a representation or 
      remove
-   -h,--help
-     Show this message
-   -v,--version
-     Show version
-   -r,--recurse DIRECTORY
-     Recursively search for files in DIRECTORY with bad characters
-   -n,--dry-run
-     Do not rename anything, just print what would be done
-   -t,--truncate LENGTH
-     Truncate all filenames to at most LENGTH bytes
    -e,--valid-set fat|posix|shell
      Select a set of characters to limit filenames to.
    -p,--portable
      Alias for "--valid-set posix"
+   -t,--truncate LENGTH
+     Truncate all filenames to at most LENGTH bytes
    -c,--replace TARGET:REPLACEMENT1,REPLACEMENT2,...
      Replace each instance of TARGET in file names with REPLACEMENT1 the 
      first time they appear, REPLACEMENT2 the second time, and so on
+   -n,--dry-run
+     Do not rename anything, just print what would be done
+   -h,--help
+     Show this message
+   -v,--version
+     Show version
 
  See man page for more details
 `);
