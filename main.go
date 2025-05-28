@@ -89,12 +89,21 @@ var FAT_RUNESET = runeset{
 }
 
 var POSIX_PORTABLE_RUNESET = runeset{
-	{ 0x2d, 0x2d },
-	{ 0x2e, 0x2e },
+	{ 0x2d, 0x2e },
 	{ 0x5f, 0x5f },
 	{ 0x30, 0x39 },
 	{ 0x41, 0x5a },
 	{ 0x61, 0x7a },
+}
+
+var SHELL_RUNESET = runeset{
+	{ 0x25, 0x25 },
+	{ 0x2d, 0x2e },
+	{ 0x30, 0x39 },
+	{ 0x41, 0x5a },
+	{ 0x5f, 0x5f },
+	{ 0x61, 0x7a },
+	{ 0xc0, MAX_CODE_POINT },
 }
 
 /// MAIN FUNCTIONS
@@ -269,12 +278,26 @@ func parseCLIArgs(args []string) (context, error) {
 			result.Strategy = args[index]
 		case "-p", "--portable":
 			result.Rset = POSIX_PORTABLE_RUNESET
+		case "-e", "--valid-set":
+			index++
+			switch args[index] {
+			case "fat":
+				result.Rset = FAT_RUNESET
+			case "posix":
+				result.Rset = POSIX_PORTABLE_RUNESET
+			case "shell":
+				result.Rset = SHELL_RUNESET
+			default:
+				return result, errors.New(
+					"Invalid character set! Please choose one of fat,posix,shell",
+				)
+			}
 		case "-c", "--replace":
 			index++
 			target, subs, ok := strings.Cut(args[index], ":")
 			if !ok {
 				return result, errors.New(fmt.Sprintf(
-					"Incorrect syntax (<<%s>>) for replacement: please use '{TARGET}:{REPLACEMNT1},{REPLACEMNT2},...'",
+					"Incorrect syntax (<<%s>>) for replacement: please use '{TARGET}:{REPLACEMENT1},{REPLACEMENT2},...'",
 					args[index],
 				))
 			}
@@ -322,13 +345,25 @@ func printHelp() {
  (?,\,*,etc.) are removed.
  
  Options:
-   -s,--strategy
+   -s,--strategy remove|represent
+     What to do with bad characters; either replace with a representation or 
+	 remove
    -h,--help
+     Show this message
    -v,--version
+     Show version
    -r,--recurse DIRECTORY
+     Recursively search for files in DIRECTORY with bad characters
    -n,--dry-run
+     Do not rename anything, just print what would be done
+   -t,--truncate LENGTH
+     Truncate all filenames to at most LENGTH bytes
+   -e,--valid-set fat|posix|shell
+     Select a set of characters to limit filenames to.
    -p,--portable
+     Alias for "--valid-set posix"
 
+  See man page for more details
 `);
 }
 

@@ -32,10 +32,17 @@ includes DIRECTORY itself.
 Causes Owl to just print a representation of what would be done without 
 actually renaming any files.
 
+### -e,\-\-valid-set fat|posix|shell
+Select which characters are considered "invalid" or "bad". Options are:
+ - fat: Characters which are valid in file names on FAT file systems. This 
+   is the default.
+ - posix: The POSIX Portable Filename Character Set `A-Za-z0-9.-_`
+ - shell: Characters that *should* not need to be quoted when used in a 
+   shell, i.e. all characters apart from control characters, whitespace, and 
+   most punctuation.
+
 ### -p,\-\-portable
-Restrict characters to ones in the POSIX Portable Filename Character Set 
-(see <https://pubs.opengroup.org/onlinepubs/9799919799/>, section 3.265) 
-instead of FAT compatible ones.
+An alias for "\-\-valid-set posix".
 
 ### -v, \-\-version
 Show version information.
