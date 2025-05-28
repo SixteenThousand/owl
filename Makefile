@@ -1,5 +1,11 @@
 SOURCES=*.go
 LINKER_FLAGS=-X main.OwlVersion=`git describe --tags --dirty`
+ifeq (${XDG_DATA_HOME},)
+	XDG_DATA_HOME=${HOME}/.local/share
+endif
+MAN_DIR=${XDG_DATA_HOME}/man/man1
+BIN_DIR=${HOME}/.local/bin
+
 owl: ${SOURCES}
 	go build -o owl -ldflags "${LINKER_FLAGS}" -- ${SOURCES}
 owl.1: man.md
@@ -7,4 +13,11 @@ owl.1: man.md
 build: owl owl.1
 test: *.go
 	go test -v .
-.PHONY: build test
+install: build
+	install -m 0777 owl ${BIN_DIR}
+	mkdir -p ${MAN_DIR}
+	install owl.1 ${MAN_DIR}
+uninstall:
+	rm -I ${BIN_DIR}/owl ${MAN_DIR}/owl.1
+
+.PHONY: build test install uninstall

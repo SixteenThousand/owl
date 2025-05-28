@@ -1,4 +1,4 @@
-# owl(1)
+# OWL(1)
 
 *The moon is bright. The owls are ready for the hunt.*
 
