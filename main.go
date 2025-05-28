@@ -343,11 +343,11 @@ func printHelp() {
 
  Rename FILES such that all characters that are invalid in FAT file systems 
  (?,\,*,etc.) are removed.
- 
+
  Options:
    -s,--strategy remove|represent
      What to do with bad characters; either replace with a representation or 
-	 remove
+     remove
    -h,--help
      Show this message
    -v,--version
@@ -362,8 +362,11 @@ func printHelp() {
      Select a set of characters to limit filenames to.
    -p,--portable
      Alias for "--valid-set posix"
+   -c,--replace TARGET:REPLACEMENT1,REPLACEMENT2,...
+     Replace each instance of TARGET in file names with REPLACEMENT1 the 
+     first time they appear, REPLACEMENT2 the second time, and so on
 
-  See man page for more details
+ See man page for more details
 `);
 }
 
