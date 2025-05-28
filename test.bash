@@ -42,6 +42,10 @@ owltest_setup() {
         $'No\u0338rse\u0301' \
         'Question? Why' \
         'QUESTION: WHY'
+    ln -s "${PWD}/::>?" ascii_dir/file
+    ln -s "${PWD}/::>?" ascii_dir/fi?le
+    ln -s "${PWD}/no-change-needed" 'ascii_dir/oh?'
+    ln -s /invalid/path 'ascii_dir/bad link'
 }
 
 owltest_teardown() {
