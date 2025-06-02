@@ -24,6 +24,32 @@ appropriate - see `man.md` for usage and other important information.
 
 See [Infrequently Asked Questions](./iaq.md) for unimportant information.
 
+
+## Installation
+
+Firstly, bear in mind that any program which renames files could result in 
+data loss. In particular, while Owl has gone through some basic testing (see 
+<./test.bash> for details), from my own use on a large nested directory Owl 
+seems to miss some files, needing repeated use to rename each. This likely 
+indicates some kind of **severe bug**.
+
+If you want to use Owl yourself, I would recommend one of the following:
+1. Don't use the `--recurse` flag, only use on individual files
+2. Use the `--dry-run` flag to find which files need renaming, but rename 
+   files manually.
+3. Contribute to Owl and help me fix the bug!
+4. Use a different tool. A few alternatives are listed below, though I 
+   haven't used any of them and so can't say whether they are good or not.
+
+If you still want to install Owl after that, then do the following:
+1. Install build dependencies (`make` and the `go` tool)
+2. Clone this repository
+3. Run `make build`
+4. Run `make install`
+Note the 3rd step won't work on windows, although you can likely just put 
+the executable (`./owl`) somewhere on your `PATH` environment variable and 
+it *should* work just the same.
+
 ---
 
 ## Links
